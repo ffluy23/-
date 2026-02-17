@@ -3,95 +3,79 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Writing Widget</title>
+<title>글쓰기 타이머</title>
 
 <style>
-html{
-  background:transparent !important;
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --muted:#6b7280;
 }
+
+*{ box-sizing:border-box; }
 
 body{
-  margin:0 !important;
-  padding:0 !important;
-  background:transparent !important;
+  margin:0;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif;
+  background:var(--bg);
+  padding:30px;
 }
 
-/* ===== 레이아웃 (2열 유지) ===== */
 .wrapper{
-  width:100%;
-  max-width:1100px;
-  margin:0 auto;
-  padding:10px;
+  max-width:1200px;
+  margin:auto;
   display:flex;
   flex-direction:column;
-  gap:16px;
-  box-sizing:border-box;
-  overflow-x:hidden;          /* 오른쪽 삐져나옴 방지 */
+  gap:20px;
 }
 
-/* 그리드 컨테이너 */
-.top,.bottom{
+.top{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:20px;
+}
+
+.bottom{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:16px;
-  align-items:start;
-}
-
-/* 중요: grid 자식이 내용 때문에 최소폭을 크게 잡아서 넘치는 현상 방지 */
-.top > .card,
-.bottom > .card{
-  min-width:0;
+  gap:20px;
 }
 
 @media(max-width:900px){
-  .top,.bottom{
-    grid-template-columns:1fr;
-  }
+  .top,.bottom{grid-template-columns:1fr;}
 }
 
-/* ===== 카드 ===== */
 .card{
-  width:100%;
   background:white;
-  border-radius:14px;
-  padding:16px;
-  box-shadow:0 4px 14px rgba(0,0,0,0.06);
-  box-sizing:border-box;
-  overflow:hidden;            /* 내부 요소가 삐져나오면 잘라줌 */
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
 }
 
-/* ===== 입력 ===== */
 textarea{
   width:100%;
-  max-width:100%;
-  box-sizing:border-box;      /* padding/border 포함해서 100% */
-  display:block;
-  min-height:220px;
-  padding:10px;
-  border-radius:8px;
-  border:1px solid #e5e7eb;
+  min-height:260px;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
   resize:vertical;
-  font-size:13px;
+  font-size:12px;
   line-height:1.6;
-  overflow-wrap:anywhere;     /* 긴 문자열도 줄바꿈 */
-}
-
-input{
-  max-width:100%;
-  box-sizing:border-box;
-  padding:6px 8px;
-  border-radius:8px;
-  border:1px solid #e5e7eb;
 }
 
 .counter{
   margin-top:6px;
   font-size:12px;
-  color:#6b7280;
+  color:var(--muted);
 }
 
-/* ===== 버튼 ===== */
+#timerDisplay{
+  font-size:48px;
+  font-weight:700;
+  margin:12px 0;
+}
+
 button{
   padding:6px 12px;
   border-radius:8px;
@@ -100,7 +84,6 @@ button{
   color:white;
   cursor:pointer;
   margin:4px;
-  font-size:13px;
 }
 
 button:hover{background:#333;}
@@ -112,34 +95,25 @@ button:hover{background:#333;}
   background:#c85f7e;
 }
 
+input{
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+}
+
 .save-item{
   display:flex;
   gap:6px;
   margin-bottom:6px;
   align-items:center;
-  min-width:0;               /* 여기서도 넘침 방지 */
 }
 
-.tab-btn{
-  background:#ddd;
-  color:black;
-}
-.tab-btn.active{
-  background:#111;
-  color:white;
-}
+.tab-btn{background:#ddd;color:black;}
+.tab-btn.active{background:#111;color:white;}
 
 .calc-display{
   width:100%;
   margin-bottom:6px;
-}
-
-/* 제목 span이 길 때도 넘치지 않게 */
-.save-item span{
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
 }
 </style>
 </head>
@@ -148,10 +122,8 @@ button:hover{background:#333;}
 
 <div class="wrapper">
 
-  <!-- 상단 -->
   <div class="top">
 
-    <!-- 현재 작업 -->
     <div class="card">
       <h3>현재 작업</h3>
       <textarea id="mainText"></textarea>
@@ -161,47 +133,46 @@ button:hover{background:#333;}
         공백 제외: <span id="mainNo">0</span>
       </div>
 
-      <div style="margin-top:12px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <div style="margin-top:12px; display:flex; align-items:center;">
         <input type="text" id="docTitle" placeholder="문서 제목">
         <button id="saveDoc">저장</button>
-        <button id="copyMain">복사</button>
+        <button id="copyMain">복사하기</button>
 
         <div style="margin-left:auto;">
-          <button id="clearMain" class="delete-btn">지우기</button>
+          <button id="clearMain" class="delete-btn">현재 작업 지우기</button>
         </div>
       </div>
     </div>
 
-    <!-- 타이머 + 계산기 -->
     <div class="card">
       <h3>타이머</h3>
       <input type="number" id="minuteInput" value="20" min="1">
-      <div id="timerDisplay" style="font-size:42px;font-weight:700;margin:10px 0;">20:00</div>
+      <div id="timerDisplay">20:00</div>
       <button id="start">시작</button>
-      <button id="pause">정지</button>
+      <button id="pause">일시정지</button>
       <button id="reset">리셋</button>
 
-      <hr style="margin:16px 0; border:none; border-top:1px solid #e5e7eb;">
+      <hr style="margin:20px 0;">
 
       <h3>계산기</h3>
-      <input type="text" id="calcInput" class="calc-display" placeholder="예: 12+3*4">
-      <button id="calcEq">=</button>
-      <button id="calcClear">C</button>
+      <input type="text" id="calcInput" class="calc-display">
+      <button onclick="calculate()">=</button>
+      <button onclick="clearCalc()">C</button>
       <div style="margin-top:6px;">결과: <strong id="calcResult">0</strong></div>
     </div>
 
   </div>
 
-  <!-- 하단 -->
   <div class="bottom">
 
     <!-- 저장소 -->
     <div class="card">
       <h2 style="margin-top:0;">저장소</h2>
 
-      <div style="display:flex; align-items:center; margin-bottom:10px; gap:6px; flex-wrap:wrap;">
-        <button class="tab-btn active" id="docsTab">문서</button>
+      <div style="display:flex; align-items:center; margin-bottom:10px;">
+        <button class="tab-btn active" id="docsTab">문서 목록</button>
         <button class="tab-btn" id="trashTab">휴지통</button>
+
         <button id="clearAllBtn" class="delete-btn" style="margin-left:auto;">
           전체 비우기
         </button>
@@ -211,7 +182,6 @@ button:hover{background:#333;}
       <div id="trashSection" style="display:none;"></div>
     </div>
 
-    <!-- 불러온 문서 -->
     <div class="card">
       <h3>불러온 문서</h3>
       <textarea id="secondText"></textarea>
@@ -221,8 +191,8 @@ button:hover{background:#333;}
         공백 제외: <span id="secondNo">0</span>
       </div>
 
-      <button id="overwriteBtn" disabled>덮어쓰기</button>
-      <button id="copySecond">복사</button>
+      <button id="overwriteBtn" disabled>덮어쓰기 저장</button>
+      <button id="copySecond">복사하기</button>
     </div>
 
   </div>
@@ -230,32 +200,22 @@ button:hover{background:#333;}
 </div>
 
 <script>
-/* ===== 엘리먼트 ===== */
 const mainText = document.getElementById("mainText");
 const secondText = document.getElementById("secondText");
 const overwriteBtn = document.getElementById("overwriteBtn");
 const docTitleInput = document.getElementById("docTitle");
 const copyMain = document.getElementById("copyMain");
 const copySecond = document.getElementById("copySecond");
-
-const minuteInput = document.getElementById("minuteInput");
-const timerDisplay = document.getElementById("timerDisplay");
-const start = document.getElementById("start");
-const pause = document.getElementById("pause");
-const reset = document.getElementById("reset");
-
-const saveDoc = document.getElementById("saveDoc");
-const clearMain = document.getElementById("clearMain");
+const clearAllBtn = document.getElementById("clearAllBtn");
 
 const docsTab = document.getElementById("docsTab");
 const trashTab = document.getElementById("trashTab");
 const docsSection = document.getElementById("docsSection");
 const trashSection = document.getElementById("trashSection");
-const clearAllBtn = document.getElementById("clearAllBtn");
 
 let currentIndex = null;
 
-/* ===== 글자수 ===== */
+/* 글자수 */
 function updateCount(area, allId, noId){
   const v = area.value;
   document.getElementById(allId).textContent = Array.from(v).length;
@@ -266,127 +226,71 @@ secondText.addEventListener("input",()=>updateCount(secondText,"secondAll","seco
 updateCount(mainText,"mainAll","mainNo");
 updateCount(secondText,"secondAll","secondNo");
 
-/* ===== 계산기 ===== */
-function calculate(){
-  const input = document.getElementById("calcInput").value;
-  try{
-    const result = Function('"use strict";return ('+input+')')();
-    document.getElementById("calcResult").textContent = result;
-  }catch{
-    document.getElementById("calcResult").textContent = "오류";
-  }
-}
-function clearCalc(){
-  document.getElementById("calcInput").value = "";
-  document.getElementById("calcResult").textContent = "0";
-}
-document.getElementById("calcEq").onclick = calculate;
-document.getElementById("calcClear").onclick = clearCalc;
-
-/* ===== 타이머 ===== */
-let timerSeconds = 1200, interval = null, running = false;
-
-function format(s){
-  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
-}
-function updateTime(){
-  timerDisplay.textContent = format(timerSeconds);
-}
-
-start.onclick = () => {
-  if(running) return;
-  running = true;
-  interval = setInterval(()=>{
-    if(timerSeconds > 0) timerSeconds--;
-    updateTime();
-  },1000);
-};
-
-pause.onclick = () => {
-  clearInterval(interval);
-  running = false;
-};
-
-reset.onclick = () => {
-  clearInterval(interval);
-  running = false;
-  timerSeconds = Number(minuteInput.value || 1) * 60;
-  updateTime();
-};
-
-updateTime();
-
-/* ===== 저장/휴지통 ===== */
+/* 로컬스토리지 */
 function getDocs(){ return JSON.parse(localStorage.getItem("docs") || "[]"); }
 function setDocs(d){ localStorage.setItem("docs", JSON.stringify(d)); }
 function getTrash(){ return JSON.parse(localStorage.getItem("trash") || "[]"); }
 function setTrash(t){ localStorage.setItem("trash", JSON.stringify(t)); }
 
+/* 렌더 */
 function renderDocs(){
   docsSection.innerHTML = "";
   const docs = getDocs();
 
-  docs.forEach((doc, i)=>{
+  docs.forEach((doc,i)=>{
     const div = document.createElement("div");
-    div.className = "save-item";
+    div.className="save-item";
 
-    const title = document.createElement("span");
-    title.textContent = doc.title;
-    title.style.flex = "1";
+    const titleInput = document.createElement("input");
+    titleInput.value = doc.title;
+    titleInput.onchange=()=>{
+      docs[i].title=titleInput.value;
+      setDocs(docs);
+    };
 
-    const loadBtn = document.createElement("button");
-    loadBtn.textContent = "열기";
-    loadBtn.onclick = () => {
-      currentIndex = i;
-      secondText.value = doc.content;
-      overwriteBtn.disabled = false;
+    const loadBtn=document.createElement("button");
+    loadBtn.textContent="열기";
+    loadBtn.onclick=()=>{
+      currentIndex=i;
+      secondText.value=doc.content;
+      overwriteBtn.disabled=false;
       updateCount(secondText,"secondAll","secondNo");
     };
 
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "삭제";
-    delBtn.className = "delete-btn";
-    delBtn.onclick = () => {
-      const docs = getDocs();
-      const removed = docs.splice(i,1)[0];
+    const delBtn=document.createElement("button");
+    delBtn.textContent="삭제";
+    delBtn.className="delete-btn";
+    delBtn.onclick=()=>{
+      const removed=docs.splice(i,1)[0];
       setDocs(docs);
-      const trash = getTrash();
+      const trash=getTrash();
       trash.push(removed);
       setTrash(trash);
       renderDocs();
       renderTrash();
-
-      if(currentIndex === i){
-        currentIndex = null;
-        secondText.value = "";
-        overwriteBtn.disabled = true;
-        updateCount(secondText,"secondAll","secondNo");
-      }else if(currentIndex !== null && currentIndex > i){
-        currentIndex -= 1;
-      }
     };
 
-    div.append(title, loadBtn, delBtn);
+    div.append(titleInput,loadBtn,delBtn);
     docsSection.appendChild(div);
   });
 }
 
 function renderTrash(){
-  trashSection.innerHTML = "";
-  const trash = getTrash();
+  trashSection.innerHTML="";
+  const trash=getTrash();
 
-  trash.forEach((doc, i)=>{
-    const div = document.createElement("div");
-    div.className = "save-item";
+  trash.forEach((doc,i)=>{
+    const div=document.createElement("div");
+    div.className="save-item";
 
-    const title = document.createElement("span");
-    title.textContent = doc.title;
-    title.style.flex = "1";
+    const title=document.createElement("span");
+    title.textContent=doc.title;
+    title.style.flex="1";
 
-    const restoreBtn = document.createElement("button");
-    restoreBtn.textContent = "복구";
-    restoreBtn.onclick = () => {
-      const docs = getDocs();
+    const restoreBtn=document.createElement("button");
+    restoreBtn.textContent="복구";
+    restoreBtn.onclick=()=>{
+      const docs=getDocs();
       docs.push(doc);
       setDocs(docs);
       trash.splice(i,1);
@@ -395,63 +299,36 @@ function renderTrash(){
       renderTrash();
     };
 
-    const permanentBtn = document.createElement("button");
-    permanentBtn.textContent = "영구삭제";
-    permanentBtn.className = "delete-btn";
-    permanentBtn.onclick = () => {
+    const permanentBtn=document.createElement("button");
+    permanentBtn.textContent="영구삭제";
+    permanentBtn.className="delete-btn";
+    permanentBtn.onclick=()=>{
       trash.splice(i,1);
       setTrash(trash);
       renderTrash();
     };
 
-    div.append(title, restoreBtn, permanentBtn);
+    div.append(title,restoreBtn,permanentBtn);
     trashSection.appendChild(div);
   });
 }
 
-saveDoc.onclick = () => {
-  const docs = getDocs();
-  docs.push({
-    title: docTitleInput.value || "제목 없음",
-    content: mainText.value
-  });
-  setDocs(docs);
-  docTitleInput.value = "";
-  renderDocs();
-};
-
-clearMain.onclick = () => {
-  mainText.value = "";
-  updateCount(mainText,"mainAll","mainNo");
-};
-
-overwriteBtn.onclick = () => {
-  if(currentIndex === null) return;
-  const docs = getDocs();
-  if(!docs[currentIndex]) return;
-  docs[currentIndex].content = secondText.value;
-  setDocs(docs);
-  renderDocs();
-};
-
-/* ===== 전체 비우기 ===== */
-function updateClearBtn(){
-  clearAllBtn.textContent = (docsSection.style.display === "none") ? "전체 영구삭제" : "전체 비우기";
+/* 전체 비우기 */
+function updateClearButtonText(){
+  if(docsSection.style.display==="none"){
+    clearAllBtn.textContent="전체 영구삭제";
+  }else{
+    clearAllBtn.textContent="전체 비우기";
+  }
 }
 
-clearAllBtn.onclick = () => {
-  if(docsSection.style.display !== "none"){
-    const docs = getDocs();
-    if(docs.length === 0) return;
-    const trash = getTrash();
+clearAllBtn.onclick=()=>{
+  if(docsSection.style.display!=="none"){
+    const docs=getDocs();
+    if(docs.length===0) return;
+    const trash=getTrash();
     setTrash(trash.concat(docs));
     setDocs([]);
-
-    currentIndex = null;
-    secondText.value = "";
-    overwriteBtn.disabled = true;
-    updateCount(secondText,"secondAll","secondNo");
-
     renderDocs();
     renderTrash();
   }else{
@@ -460,41 +337,26 @@ clearAllBtn.onclick = () => {
   }
 };
 
-/* ===== 탭 ===== */
-docsTab.onclick = () => {
-  docsSection.style.display = "block";
-  trashSection.style.display = "none";
+/* 탭 */
+docsTab.onclick=()=>{
+  docsSection.style.display="block";
+  trashSection.style.display="none";
   docsTab.classList.add("active");
   trashTab.classList.remove("active");
-  updateClearBtn();
+  updateClearButtonText();
 };
 
-trashTab.onclick = () => {
-  docsSection.style.display = "none";
-  trashSection.style.display = "block";
+trashTab.onclick=()=>{
+  docsSection.style.display="none";
+  trashSection.style.display="block";
   trashTab.classList.add("active");
   docsTab.classList.remove("active");
-  updateClearBtn();
+  updateClearButtonText();
 };
 
-/* ===== 복사 ===== */
-async function copyText(textarea){
-  try{
-    await navigator.clipboard.writeText(textarea.value);
-  }catch{
-    textarea.focus();
-    textarea.select();
-    document.execCommand("copy");
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-  }
-}
-copyMain.onclick = () => copyText(mainText);
-copySecond.onclick = () => copyText(secondText);
-
-/* 초기 */
 renderDocs();
 renderTrash();
-updateClearBtn();
+updateClearButtonText();
 </script>
 
 </body>
