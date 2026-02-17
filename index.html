@@ -9,6 +9,7 @@
 html{
   background:transparent !important;
 }
+
 body{
   margin:0 !important;
   padding:0 !important;
@@ -16,35 +17,40 @@ body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif;
 }
 
-/* 레이아웃 */
+/* ===== 레이아웃 ===== */
 .wrapper{
-  max-width:1100px;
-  margin:0 auto !important;
+  width:100%;
+  max-width:1000px;
+  margin:0 auto;
   padding:10px;
   display:flex;
   flex-direction:column;
   gap:16px;
-}
-.top,.bottom{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
-@media(max-width:900px){
-  .top,.bottom{grid-template-columns:1fr;}
+  overflow:hidden;
 }
 
-/* 카드 */
+.top,.bottom{
+  display:flex;              /* 노션 안정성 위해 1열 세로 */
+  flex-direction:column;
+  gap:16px;
+}
+
+/* ===== 카드 ===== */
 .card{
+  width:100%;
   background:white;
   border-radius:14px;
   padding:16px;
   box-shadow:0 4px 14px rgba(0,0,0,0.06);
+  overflow:hidden;
 }
 
-/* 입력 */
+/* ===== 입력 ===== */
 textarea{
   width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  display:block;
   min-height:220px;
   padding:10px;
   border-radius:8px;
@@ -53,17 +59,20 @@ textarea{
   font-size:13px;
   line-height:1.6;
 }
+
 input{
   padding:6px 8px;
   border-radius:8px;
   border:1px solid #e5e7eb;
 }
+
 .counter{
   margin-top:6px;
   font-size:12px;
   color:#6b7280;
 }
 
+/* ===== 버튼 ===== */
 button{
   padding:6px 12px;
   border-radius:8px;
@@ -74,6 +83,7 @@ button{
   margin:4px;
   font-size:13px;
 }
+
 button:hover{background:#333;}
 
 .delete-btn{
@@ -110,6 +120,7 @@ button:hover{background:#333;}
 
 <div class="wrapper">
 
+  <!-- 현재 작업 -->
   <div class="top">
 
     <div class="card">
@@ -150,6 +161,7 @@ button:hover{background:#333;}
 
   </div>
 
+  <!-- 저장소 -->
   <div class="bottom">
 
     <div class="card">
@@ -185,262 +197,172 @@ button:hover{background:#333;}
 </div>
 
 <script>
-/* ===== 엘리먼트 ===== */
-const mainText = document.getElementById("mainText");
-const secondText = document.getElementById("secondText");
-const overwriteBtn = document.getElementById("overwriteBtn");
-const clearAllBtn = document.getElementById("clearAllBtn");
-const copyMain = document.getElementById("copyMain");
-const copySecond = document.getElementById("copySecond");
+const mainText=document.getElementById("mainText");
+const secondText=document.getElementById("secondText");
+const overwriteBtn=document.getElementById("overwriteBtn");
+const clearAllBtn=document.getElementById("clearAllBtn");
+const copyMain=document.getElementById("copyMain");
+const copySecond=document.getElementById("copySecond");
+const docsTab=document.getElementById("docsTab");
+const trashTab=document.getElementById("trashTab");
+const docsSection=document.getElementById("docsSection");
+const trashSection=document.getElementById("trashSection");
 
-const docsTab = document.getElementById("docsTab");
-const trashTab = document.getElementById("trashTab");
-const docsSection = document.getElementById("docsSection");
-const trashSection = document.getElementById("trashSection");
+let currentIndex=null;
 
-let currentIndex = null;
-
-/* ===== 글자수 ===== */
-function updateCount(area, allId, noId){
-  const v = area.value;
-  document.getElementById(allId).textContent = Array.from(v).length;
-  document.getElementById(noId).textContent = Array.from(v.replace(/\s/g,"")).length;
+/* 글자수 */
+function updateCount(area,a,b){
+  document.getElementById(a).textContent=area.value.length;
+  document.getElementById(b).textContent=area.value.replace(/\s/g,"").length;
 }
 mainText.addEventListener("input",()=>updateCount(mainText,"mainAll","mainNo"));
 secondText.addEventListener("input",()=>updateCount(secondText,"secondAll","secondNo"));
 updateCount(mainText,"mainAll","mainNo");
 updateCount(secondText,"secondAll","secondNo");
 
-/* ===== 계산기 ===== */
+/* 계산기 */
 function calculate(){
-  const input = document.getElementById("calcInput").value;
+  const input=document.getElementById("calcInput").value;
   try{
-    const result = Function('"use strict";return ('+input+')')();
-    document.getElementById("calcResult").textContent = result;
+    const result=Function('"use strict";return ('+input+')')();
+    document.getElementById("calcResult").textContent=result;
   }catch{
-    document.getElementById("calcResult").textContent = "오류";
+    document.getElementById("calcResult").textContent="오류";
   }
 }
 function clearCalc(){
-  document.getElementById("calcInput").value = "";
-  document.getElementById("calcResult").textContent = "0";
+  document.getElementById("calcInput").value="";
+  document.getElementById("calcResult").textContent="0";
 }
-document.getElementById("calcEq").onclick = calculate;
-document.getElementById("calcClear").onclick = clearCalc;
+document.getElementById("calcEq").onclick=calculate;
+document.getElementById("calcClear").onclick=clearCalc;
 
-/* ===== 타이머 ===== */
-let timerSeconds = 1200, interval = null, running = false;
-
-function format(s){
-  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
-}
-function updateTime(){
-  document.getElementById("timerDisplay").textContent = format(timerSeconds);
-}
-
-document.getElementById("start").onclick = () => {
-  if(running) return;
-  running = true;
-  interval = setInterval(()=>{
-    if(timerSeconds > 0) timerSeconds--;
-    updateTime();
-  },1000);
-};
-
-document.getElementById("pause").onclick = () => {
-  clearInterval(interval);
-  running = false;
-};
-
-document.getElementById("reset").onclick = () => {
-  clearInterval(interval);
-  running = false;
-  timerSeconds = Number(document.getElementById("minuteInput").value || 1) * 60;
-  updateTime();
-};
-
+/* 타이머 */
+let timerSeconds=1200,interval=null,running=false;
+function format(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function updateTime(){document.getElementById("timerDisplay").textContent=format(timerSeconds);}
+document.getElementById("start").onclick=()=>{if(running)return;running=true;interval=setInterval(()=>{if(timerSeconds>0)timerSeconds--;updateTime();},1000);};
+document.getElementById("pause").onclick=()=>{clearInterval(interval);running=false;};
+document.getElementById("reset").onclick=()=>{clearInterval(interval);running=false;timerSeconds=(document.getElementById("minuteInput").value||1)*60;updateTime();};
 updateTime();
 
-/* ===== 저장/휴지통 ===== */
-function getDocs(){ return JSON.parse(localStorage.getItem("docs") || "[]"); }
-function setDocs(d){ localStorage.setItem("docs", JSON.stringify(d)); }
-function getTrash(){ return JSON.parse(localStorage.getItem("trash") || "[]"); }
-function setTrash(t){ localStorage.setItem("trash", JSON.stringify(t)); }
+/* 저장소 */
+function getDocs(){return JSON.parse(localStorage.getItem("docs")||"[]");}
+function setDocs(d){localStorage.setItem("docs",JSON.stringify(d));}
+function getTrash(){return JSON.parse(localStorage.getItem("trash")||"[]");}
+function setTrash(t){localStorage.setItem("trash",JSON.stringify(t));}
 
 function renderDocs(){
-  docsSection.innerHTML = "";
-  const docs = getDocs();
-
-  docs.forEach((doc, i)=>{
-    const div = document.createElement("div");
-    div.className = "save-item";
-
-    const title = document.createElement("span");
-    title.textContent = doc.title;
-    title.style.flex = "1";
-
-    const loadBtn = document.createElement("button");
-    loadBtn.textContent = "열기";
-    loadBtn.onclick = () => {
-      currentIndex = i;
-      secondText.value = doc.content;
-      overwriteBtn.disabled = false;
-      updateCount(secondText,"secondAll","secondNo");
-    };
-
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "삭제";
-    delBtn.className = "delete-btn";
-    delBtn.onclick = () => {
-      const docs = getDocs();
-      const removed = docs.splice(i,1)[0];
+  docsSection.innerHTML="";
+  getDocs().forEach((doc,i)=>{
+    const div=document.createElement("div");
+    div.className="save-item";
+    div.innerHTML=`<span style="flex:1">${doc.title}</span>`;
+    const open=document.createElement("button");
+    open.textContent="열기";
+    open.onclick=()=>{currentIndex=i;secondText.value=doc.content;overwriteBtn.disabled=false;updateCount(secondText,"secondAll","secondNo");};
+    const del=document.createElement("button");
+    del.textContent="삭제";
+    del.className="delete-btn";
+    del.onclick=()=>{
+      const docs=getDocs();
+      const removed=docs.splice(i,1)[0];
       setDocs(docs);
-      const trash = getTrash();
+      const trash=getTrash();
       trash.push(removed);
       setTrash(trash);
-      renderDocs();
-      renderTrash();
-
-      // 현재 열어둔 문서가 삭제된 경우 상태 정리
-      if(currentIndex === i){
-        currentIndex = null;
-        secondText.value = "";
-        overwriteBtn.disabled = true;
-        updateCount(secondText,"secondAll","secondNo");
-      }else if(currentIndex !== null && currentIndex > i){
-        currentIndex -= 1;
-      }
+      renderDocs();renderTrash();
     };
-
-    div.append(title, loadBtn, delBtn);
+    div.append(open,del);
     docsSection.appendChild(div);
   });
 }
 
 function renderTrash(){
-  trashSection.innerHTML = "";
-  const trash = getTrash();
-
-  trash.forEach((doc, i)=>{
-    const div = document.createElement("div");
-    div.className = "save-item";
-
-    const title = document.createElement("span");
-    title.textContent = doc.title;
-    title.style.flex = "1";
-
-    const restoreBtn = document.createElement("button");
-    restoreBtn.textContent = "복구";
-    restoreBtn.onclick = () => {
-      const docs = getDocs();
+  trashSection.innerHTML="";
+  getTrash().forEach((doc,i)=>{
+    const div=document.createElement("div");
+    div.className="save-item";
+    div.innerHTML=`<span style="flex:1">${doc.title}</span>`;
+    const restore=document.createElement("button");
+    restore.textContent="복구";
+    restore.onclick=()=>{
+      const docs=getDocs();
       docs.push(doc);
       setDocs(docs);
+      const trash=getTrash();
       trash.splice(i,1);
       setTrash(trash);
-      renderDocs();
-      renderTrash();
+      renderDocs();renderTrash();
     };
-
-    const permanentBtn = document.createElement("button");
-    permanentBtn.textContent = "영구삭제";
-    permanentBtn.className = "delete-btn";
-    permanentBtn.onclick = () => {
+    const del=document.createElement("button");
+    del.textContent="영구삭제";
+    del.className="delete-btn";
+    del.onclick=()=>{
+      const trash=getTrash();
       trash.splice(i,1);
       setTrash(trash);
       renderTrash();
     };
-
-    div.append(title, restoreBtn, permanentBtn);
+    div.append(restore,del);
     trashSection.appendChild(div);
   });
 }
 
-document.getElementById("saveDoc").onclick = () => {
-  const docs = getDocs();
-  docs.push({
-    title: document.getElementById("docTitle").value || "제목 없음",
-    content: mainText.value
-  });
+document.getElementById("saveDoc").onclick=()=>{
+  const docs=getDocs();
+  docs.push({title:document.getElementById("docTitle").value||"제목 없음",content:mainText.value});
   setDocs(docs);
-  document.getElementById("docTitle").value = "";
+  document.getElementById("docTitle").value="";
   renderDocs();
 };
 
-document.getElementById("clearMain").onclick = () => {
-  mainText.value = "";
+document.getElementById("clearMain").onclick=()=>{
+  mainText.value="";
   updateCount(mainText,"mainAll","mainNo");
 };
 
-overwriteBtn.onclick = () => {
-  if(currentIndex === null) return;
-  const docs = getDocs();
-  if(!docs[currentIndex]) return;
-  docs[currentIndex].content = secondText.value;
-  setDocs(docs);
-  renderDocs();
-};
-
-/* ===== 전체 비우기 ===== */
+/* 전체 비우기 */
 function updateClearBtn(){
-  clearAllBtn.textContent = (docsSection.style.display === "none") ? "전체 영구삭제" : "전체 비우기";
+  clearAllBtn.textContent=docsSection.style.display==="none"?"전체 영구삭제":"전체 비우기";
 }
-
-clearAllBtn.onclick = () => {
-  if(docsSection.style.display !== "none"){
-    // 문서 → 전부 휴지통으로 이동
-    const docs = getDocs();
-    if(docs.length === 0) return;
-    const trash = getTrash();
-    setTrash(trash.concat(docs));
+clearAllBtn.onclick=()=>{
+  if(docsSection.style.display!=="none"){
+    setTrash(getTrash().concat(getDocs()));
     setDocs([]);
-
-    // 열어둔 문서 상태 정리
-    currentIndex = null;
-    secondText.value = "";
-    overwriteBtn.disabled = true;
-    updateCount(secondText,"secondAll","secondNo");
-
-    renderDocs();
-    renderTrash();
+    renderDocs();renderTrash();
   }else{
-    // 휴지통 → 전부 영구삭제
     setTrash([]);
     renderTrash();
   }
 };
 
-/* ===== 탭 ===== */
-docsTab.onclick = () => {
-  docsSection.style.display = "block";
-  trashSection.style.display = "none";
+docsTab.onclick=()=>{
+  docsSection.style.display="block";
+  trashSection.style.display="none";
   docsTab.classList.add("active");
   trashTab.classList.remove("active");
   updateClearBtn();
 };
 
-trashTab.onclick = () => {
-  docsSection.style.display = "none";
-  trashSection.style.display = "block";
+trashTab.onclick=()=>{
+  docsSection.style.display="none";
+  trashSection.style.display="block";
   trashTab.classList.add("active");
   docsTab.classList.remove("active");
   updateClearBtn();
 };
 
-/* ===== 복사 기능 (알림 없음) ===== */
 async function copyText(textarea){
-  try{
-    await navigator.clipboard.writeText(textarea.value);
-  }catch{
-    textarea.focus();
+  try{await navigator.clipboard.writeText(textarea.value);}
+  catch{
     textarea.select();
     document.execCommand("copy");
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
   }
 }
-copyMain.onclick = () => copyText(mainText);
-copySecond.onclick = () => copyText(secondText);
+copyMain.onclick=()=>copyText(mainText);
+copySecond.onclick=()=>copyText(secondText);
 
-/* 초기 렌더 */
 renderDocs();
 renderTrash();
 updateClearBtn();
