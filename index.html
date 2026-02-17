@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>글쓰기 타이머</title>
+
+<style>
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --muted:#6b7280;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif;
+  background:var(--bg);
+  padding:30px;
+}
+
+.wrapper{
+  max-width:1200px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.top{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:20px;
+}
+
+.bottom{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+@media(max-width:900px){
+  .top,.bottom{grid-template-columns:1fr;}
+}
+
+.card{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+}
+
+textarea{
+  width:100%;
+  min-height:260px;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  resize:vertical;
+  font-size:12px;
+  line-height:1.6;
+}
+
+.counter{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+#timerDisplay{
+  font-size:48px;
+  font-weight:700;
+  margin:12px 0;
+}
+
+button{
+  padding:6px 12px;
+  border-radius:8px;
+  border:none;
+  background:#111;
+  color:white;
+  cursor:pointer;
+  margin:4px;
+}
+
+button:hover{background:#333;}
+
+.delete-btn{
+  background:#dc7090;
+}
+.delete-btn:hover{
+  background:#c85f7e;
+}
+
+input{
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+}
+
+.save-item{
+  display:flex;
+  gap:6px;
+  margin-bottom:6px;
+  align-items:center;
+}
+
+.tab-btn{background:#ddd;color:black;}
+.tab-btn.active{background:#111;color:white;}
+
+.calc-display{
+  width:100%;
+  margin-bottom:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+  <div class="top">
+
+    <div class="card">
+      <h3>현재 작업</h3>
+      <textarea id="mainText"></textarea>
+
+      <div class="counter">
+        공백 포함: <span id="mainAll">0</span> |
+        공백 제외: <span id="mainNo">0</span>
+      </div>
+
+      <div style="margin-top:12px; display:flex; align-items:center;">
+        <input type="text" id="docTitle" placeholder="문서 제목">
+        <button id="saveDoc">저장</button>
+        <button id="copyMain">복사하기</button>
+
+        <div style="margin-left:auto;">
+          <button id="clearMain" class="delete-btn">현재 작업 지우기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>타이머</h3>
+      <input type="number" id="minuteInput" value="20" min="1">
+      <div id="timerDisplay">20:00</div>
+      <button id="start">시작</button>
+      <button id="pause">일시정지</button>
+      <button id="reset">리셋</button>
+
+      <hr style="margin:20px 0;">
+
+      <h3>계산기</h3>
+      <input type="text" id="calcInput" class="calc-display">
+      <button onclick="calculate()">=</button>
+      <button onclick="clearCalc()">C</button>
+      <div style="margin-top:6px;">결과: <strong id="calcResult">0</strong></div>
+    </div>
+
+  </div>
+
+  <div class="bottom">
+
+    <!-- 저장소 -->
+    <div class="card">
+      <h2 style="margin-top:0;">저장소</h2>
+
+      <div style="display:flex; align-items:center; margin-bottom:10px;">
+        <button class="tab-btn active" id="docsTab">문서 목록</button>
+        <button class="tab-btn" id="trashTab">휴지통</button>
+
+        <button id="clearAllBtn" class="delete-btn" style="margin-left:auto;">
+          전체 비우기
+        </button>
+      </div>
+
+      <div id="docsSection"></div>
+      <div id="trashSection" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h3>불러온 문서</h3>
+      <textarea id="secondText"></textarea>
+
+      <div class="counter">
+        공백 포함: <span id="secondAll">0</span> |
+        공백 제외: <span id="secondNo">0</span>
+      </div>
+
+      <button id="overwriteBtn" disabled>덮어쓰기 저장</button>
+      <button id="copySecond">복사하기</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const mainText = document.getElementById("mainText");
+const secondText = document.getElementById("secondText");
+const overwriteBtn = document.getElementById("overwriteBtn");
+const docTitleInput = document.getElementById("docTitle");
+const copyMain = document.getElementById("copyMain");
+const copySecond = document.getElementById("copySecond");
+const clearAllBtn = document.getElementById("clearAllBtn");
+
+const docsTab = document.getElementById("docsTab");
+const trashTab = document.getElementById("trashTab");
+const docsSection = document.getElementById("docsSection");
+const trashSection = document.getElementById("trashSection");
+
+let currentIndex = null;
+
+/* 글자수 */
+function updateCount(area, allId, noId){
+  const v = area.value;
+  document.getElementById(allId).textContent = Array.from(v).length;
+  document.getElementById(noId).textContent = Array.from(v.replace(/\s/g,"")).length;
+}
+mainText.addEventListener("input",()=>updateCount(mainText,"mainAll","mainNo"));
+secondText.addEventListener("input",()=>updateCount(secondText,"secondAll","secondNo"));
+updateCount(mainText,"mainAll","mainNo");
+updateCount(secondText,"secondAll","secondNo");
+
+/* 로컬스토리지 */
+function getDocs(){ return JSON.parse(localStorage.getItem("docs") || "[]"); }
+function setDocs(d){ localStorage.setItem("docs", JSON.stringify(d)); }
+function getTrash(){ return JSON.parse(localStorage.getItem("trash") || "[]"); }
+function setTrash(t){ localStorage.setItem("trash", JSON.stringify(t)); }
+
+/* 렌더 */
+function renderDocs(){
+  docsSection.innerHTML = "";
+  const docs = getDocs();
+
+  docs.forEach((doc,i)=>{
+    const div = document.createElement("div");
+    div.className="save-item";
+
+    const titleInput = document.createElement("input");
+    titleInput.value = doc.title;
+    titleInput.onchange=()=>{
+      docs[i].title=titleInput.value;
+      setDocs(docs);
+    };
+
+    const loadBtn=document.createElement("button");
+    loadBtn.textContent="열기";
+    loadBtn.onclick=()=>{
+      currentIndex=i;
+      secondText.value=doc.content;
+      overwriteBtn.disabled=false;
+      updateCount(secondText,"secondAll","secondNo");
+    };
+
+    const delBtn=document.createElement("button");
+    delBtn.textContent="삭제";
+    delBtn.className="delete-btn";
+    delBtn.onclick=()=>{
+      const removed=docs.splice(i,1)[0];
+      setDocs(docs);
+      const trash=getTrash();
+      trash.push(removed);
+      setTrash(trash);
+      renderDocs();
+      renderTrash();
+    };
+
+    div.append(titleInput,loadBtn,delBtn);
+    docsSection.appendChild(div);
+  });
+}
+
+function renderTrash(){
+  trashSection.innerHTML="";
+  const trash=getTrash();
+
+  trash.forEach((doc,i)=>{
+    const div=document.createElement("div");
+    div.className="save-item";
+
+    const title=document.createElement("span");
+    title.textContent=doc.title;
+    title.style.flex="1";
+
+    const restoreBtn=document.createElement("button");
+    restoreBtn.textContent="복구";
+    restoreBtn.onclick=()=>{
+      const docs=getDocs();
+      docs.push(doc);
+      setDocs(docs);
+      trash.splice(i,1);
+      setTrash(trash);
+      renderDocs();
+      renderTrash();
+    };
+
+    const permanentBtn=document.createElement("button");
+    permanentBtn.textContent="영구삭제";
+    permanentBtn.className="delete-btn";
+    permanentBtn.onclick=()=>{
+      trash.splice(i,1);
+      setTrash(trash);
+      renderTrash();
+    };
+
+    div.append(title,restoreBtn,permanentBtn);
+    trashSection.appendChild(div);
+  });
+}
+
+/* 전체 비우기 */
+function updateClearButtonText(){
+  if(docsSection.style.display==="none"){
+    clearAllBtn.textContent="전체 영구삭제";
+  }else{
+    clearAllBtn.textContent="전체 비우기";
+  }
+}
+
+clearAllBtn.onclick=()=>{
+  if(docsSection.style.display!=="none"){
+    const docs=getDocs();
+    if(docs.length===0) return;
+    const trash=getTrash();
+    setTrash(trash.concat(docs));
+    setDocs([]);
+    renderDocs();
+    renderTrash();
+  }else{
+    setTrash([]);
+    renderTrash();
+  }
+};
+
+/* 탭 */
+docsTab.onclick=()=>{
+  docsSection.style.display="block";
+  trashSection.style.display="none";
+  docsTab.classList.add("active");
+  trashTab.classList.remove("active");
+  updateClearButtonText();
+};
+
+trashTab.onclick=()=>{
+  docsSection.style.display="none";
+  trashSection.style.display="block";
+  trashTab.classList.add("active");
+  docsTab.classList.remove("active");
+  updateClearButtonText();
+};
+
+renderDocs();
+renderTrash();
+updateClearButtonText();
+</script>
+
+</body>
+</html>
