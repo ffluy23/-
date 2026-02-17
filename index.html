@@ -8,7 +8,6 @@
 <style>
 :root{
   --bg:#f5f7fb;
-  --card:#ffffff;
   --border:#e5e7eb;
   --muted:#6b7280;
 }
@@ -155,9 +154,9 @@ input{
       <hr style="margin:20px 0;">
 
       <h3>계산기</h3>
-      <input type="text" id="calcInput" class="calc-display">
-      <button onclick="calculate()">=</button>
-      <button onclick="clearCalc()">C</button>
+      <input type="text" id="calcInput" class="calc-display" placeholder="예: 12+3*4">
+      <button id="calcEq">=</button>
+      <button id="calcClear">C</button>
       <div style="margin-top:6px;">결과: <strong id="calcResult">0</strong></div>
     </div>
 
@@ -165,7 +164,6 @@ input{
 
   <div class="bottom">
 
-    <!-- 저장소 -->
     <div class="card">
       <h2 style="margin-top:0;">저장소</h2>
 
@@ -200,86 +198,108 @@ input{
 </div>
 
 <script>
-const mainText = document.getElementById("mainText");
-const secondText = document.getElementById("secondText");
-const overwriteBtn = document.getElementById("overwriteBtn");
-const docTitleInput = document.getElementById("docTitle");
-const copyMain = document.getElementById("copyMain");
-const copySecond = document.getElementById("copySecond");
-const clearAllBtn = document.getElementById("clearAllBtn");
+const mainText=document.getElementById("mainText");
+const secondText=document.getElementById("secondText");
+const overwriteBtn=document.getElementById("overwriteBtn");
+const docTitleInput=document.getElementById("docTitle");
+const copyMain=document.getElementById("copyMain");
+const copySecond=document.getElementById("copySecond");
+const clearAllBtn=document.getElementById("clearAllBtn");
 
-const docsTab = document.getElementById("docsTab");
-const trashTab = document.getElementById("trashTab");
-const docsSection = document.getElementById("docsSection");
-const trashSection = document.getElementById("trashSection");
+const docsTab=document.getElementById("docsTab");
+const trashTab=document.getElementById("trashTab");
+const docsSection=document.getElementById("docsSection");
+const trashSection=document.getElementById("trashSection");
 
-let currentIndex = null;
+let currentIndex=null;
 
 /* 글자수 */
-function updateCount(area, allId, noId){
-  const v = area.value;
-  document.getElementById(allId).textContent = Array.from(v).length;
-  document.getElementById(noId).textContent = Array.from(v.replace(/\s/g,"")).length;
+function updateCount(area,a,b){
+  const v=area.value;
+  document.getElementById(a).textContent=Array.from(v).length;
+  document.getElementById(b).textContent=Array.from(v.replace(/\s/g,"")).length;
 }
 mainText.addEventListener("input",()=>updateCount(mainText,"mainAll","mainNo"));
 secondText.addEventListener("input",()=>updateCount(secondText,"secondAll","secondNo"));
 updateCount(mainText,"mainAll","mainNo");
 updateCount(secondText,"secondAll","secondNo");
 
-/* 로컬스토리지 */
-function getDocs(){ return JSON.parse(localStorage.getItem("docs") || "[]"); }
-function setDocs(d){ localStorage.setItem("docs", JSON.stringify(d)); }
-function getTrash(){ return JSON.parse(localStorage.getItem("trash") || "[]"); }
-function setTrash(t){ localStorage.setItem("trash", JSON.stringify(t)); }
+/* 타이머 */
+let timerSeconds=1200,interval=null,running=false;
+function format(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function updateTime(){document.getElementById("timerDisplay").textContent=format(timerSeconds);}
+document.getElementById("start").onclick=()=>{if(running)return;running=true;interval=setInterval(()=>{if(timerSeconds>0)timerSeconds--;updateTime();},1000);};
+document.getElementById("pause").onclick=()=>{clearInterval(interval);running=false;};
+document.getElementById("reset").onclick=()=>{clearInterval(interval);running=false;timerSeconds=(document.getElementById("minuteInput").value||1)*60;updateTime();};
+updateTime();
 
-/* 렌더 */
+/* 계산기 */
+function calculate(){
+  const input=document.getElementById("calcInput").value;
+  try{
+    const result=Function('"use strict";return ('+input+')')();
+    document.getElementById("calcResult").textContent=result;
+  }catch{
+    document.getElementById("calcResult").textContent="오류";
+  }
+}
+function clearCalc(){
+  document.getElementById("calcInput").value="";
+  document.getElementById("calcResult").textContent="0";
+}
+document.getElementById("calcEq").onclick=calculate;
+document.getElementById("calcClear").onclick=clearCalc;
+
+/* 저장소 */
+function getDocs(){return JSON.parse(localStorage.getItem("docs")||"[]");}
+function setDocs(d){localStorage.setItem("docs",JSON.stringify(d));}
+function getTrash(){return JSON.parse(localStorage.getItem("trash")||"[]");}
+function setTrash(t){localStorage.setItem("trash",JSON.stringify(t));}
+
 function renderDocs(){
-  docsSection.innerHTML = "";
-  const docs = getDocs();
-
-  docs.forEach((doc,i)=>{
-    const div = document.createElement("div");
+  docsSection.innerHTML="";
+  getDocs().forEach((doc,i)=>{
+    const div=document.createElement("div");
     div.className="save-item";
 
-    const titleInput = document.createElement("input");
-    titleInput.value = doc.title;
+    const titleInput=document.createElement("input");
+    titleInput.value=doc.title;
     titleInput.onchange=()=>{
+      const docs=getDocs();
       docs[i].title=titleInput.value;
       setDocs(docs);
     };
 
-    const loadBtn=document.createElement("button");
-    loadBtn.textContent="열기";
-    loadBtn.onclick=()=>{
+    const open=document.createElement("button");
+    open.textContent="열기";
+    open.onclick=()=>{
       currentIndex=i;
       secondText.value=doc.content;
       overwriteBtn.disabled=false;
       updateCount(secondText,"secondAll","secondNo");
     };
 
-    const delBtn=document.createElement("button");
-    delBtn.textContent="삭제";
-    delBtn.className="delete-btn";
-    delBtn.onclick=()=>{
+    const del=document.createElement("button");
+    del.textContent="삭제";
+    del.className="delete-btn";
+    del.onclick=()=>{
+      const docs=getDocs();
       const removed=docs.splice(i,1)[0];
       setDocs(docs);
       const trash=getTrash();
       trash.push(removed);
       setTrash(trash);
-      renderDocs();
-      renderTrash();
+      renderDocs();renderTrash();
     };
 
-    div.append(titleInput,loadBtn,delBtn);
+    div.append(titleInput,open,del);
     docsSection.appendChild(div);
   });
 }
 
 function renderTrash(){
   trashSection.innerHTML="";
-  const trash=getTrash();
-
-  trash.forEach((doc,i)=>{
+  getTrash().forEach((doc,i)=>{
     const div=document.createElement("div");
     div.className="save-item";
 
@@ -287,63 +307,75 @@ function renderTrash(){
     title.textContent=doc.title;
     title.style.flex="1";
 
-    const restoreBtn=document.createElement("button");
-    restoreBtn.textContent="복구";
-    restoreBtn.onclick=()=>{
+    const restore=document.createElement("button");
+    restore.textContent="복구";
+    restore.onclick=()=>{
       const docs=getDocs();
       docs.push(doc);
       setDocs(docs);
+      const trash=getTrash();
       trash.splice(i,1);
       setTrash(trash);
-      renderDocs();
+      renderDocs();renderTrash();
+    };
+
+    const del=document.createElement("button");
+    del.textContent="영구삭제";
+    del.className="delete-btn";
+    del.onclick=()=>{
+      const trash=getTrash();
+      trash.splice(i,1);
+      setTrash(trash);
       renderTrash();
     };
 
-    const permanentBtn=document.createElement("button");
-    permanentBtn.textContent="영구삭제";
-    permanentBtn.className="delete-btn";
-    permanentBtn.onclick=()=>{
-      trash.splice(i,1);
-      setTrash(trash);
-      renderTrash();
-    };
-
-    div.append(title,restoreBtn,permanentBtn);
+    div.append(title,restore,del);
     trashSection.appendChild(div);
   });
 }
 
-/* 전체 비우기 */
-function updateClearButtonText(){
-  if(docsSection.style.display==="none"){
-    clearAllBtn.textContent="전체 영구삭제";
-  }else{
-    clearAllBtn.textContent="전체 비우기";
-  }
+document.getElementById("saveDoc").onclick=()=>{
+  const docs=getDocs();
+  docs.push({title:docTitleInput.value||"제목 없음",content:mainText.value});
+  setDocs(docs);
+  docTitleInput.value="";
+  renderDocs();
+};
+
+document.getElementById("clearMain").onclick=()=>{
+  mainText.value="";
+  updateCount(mainText,"mainAll","mainNo");
+};
+
+overwriteBtn.onclick=()=>{
+  if(currentIndex===null)return;
+  const docs=getDocs();
+  docs[currentIndex].content=secondText.value;
+  setDocs(docs);
+  renderDocs();
+};
+
+function updateClearBtn(){
+  clearAllBtn.textContent=docsSection.style.display==="none"?"전체 영구삭제":"전체 비우기";
 }
 
 clearAllBtn.onclick=()=>{
   if(docsSection.style.display!=="none"){
-    const docs=getDocs();
-    if(docs.length===0) return;
-    const trash=getTrash();
-    setTrash(trash.concat(docs));
+    setTrash(getTrash().concat(getDocs()));
     setDocs([]);
-    renderDocs();
-    renderTrash();
+    renderDocs();renderTrash();
   }else{
     setTrash([]);
     renderTrash();
   }
 };
 
-/* 탭 */
 docsTab.onclick=()=>{
   docsSection.style.display="block";
   trashSection.style.display="none";
   docsTab.classList.add("active");
   trashTab.classList.remove("active");
-  updateClearButtonText();
+  updateClearBtn();
 };
 
 trashTab.onclick=()=>{
@@ -351,12 +383,19 @@ trashTab.onclick=()=>{
   trashSection.style.display="block";
   trashTab.classList.add("active");
   docsTab.classList.remove("active");
-  updateClearButtonText();
+  updateClearBtn();
 };
+
+async function copyText(textarea){
+  try{await navigator.clipboard.writeText(textarea.value);}
+  catch{textarea.select();document.execCommand("copy");}
+}
+copyMain.onclick=()=>copyText(mainText);
+copySecond.onclick=()=>copyText(secondText);
 
 renderDocs();
 renderTrash();
-updateClearButtonText();
+updateClearBtn();
 </script>
 
 </body>
